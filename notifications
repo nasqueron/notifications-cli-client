@@ -26,13 +26,13 @@ import pika
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def getConfig():
+def get_config():
     config = configparser.ConfigParser()
     config.read('/usr/local/etc/notifications.conf')
     return config
 
 
-def getCredentials(config):
+def get_credentials(config):
     return pika.PlainCredentials(
         username=config['Broker']['User'],
         password=config['Broker']['Password'],
@@ -40,20 +40,20 @@ def getCredentials(config):
     )
 
 
-def getBrokerConnection(config):
+def get_broker_connection(config):
     parameters = pika.ConnectionParameters(
         host=config['Broker']['Host'],
         virtual_host=config['Broker']['Vhost'],
-        credentials=getCredentials(config)
+        credentials=get_credentials(config)
     )
     return pika.BlockingConnection(parameters)
 
 
-def getExchange(config):
+def get_exchange(config):
     return config['Broker']['Exchange']
 
 
-def getBrokerQueue(channel, exchange):
+def get_broker_queue(channel, exchange):
     channel.exchange_declare(exchange=exchange, type='topic')
     result = channel.queue_declare(exclusive=True)
     return result.method.queue
@@ -64,24 +64,24 @@ def getBrokerQueue(channel, exchange):
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def getNotificationFormat():
+def get_notification_format():
     return "[{time}] <{project}/{group}> {text}"
 
 
-def getNotificationText(notification):
+def get_notification_text(notification):
     text = notification['text']
     if notification['link']:
         text += " — " + notification['link']
     return text
 
 
-def formatNotification(notificationMessage):
-    notification = json.loads(notificationMessage)
-    return getNotificationFormat().format(
+def format_notification(notification_message):
+    notification = json.loads(notification_message)
+    return get_notification_format().format(
         time=time.strftime("%H:%M:%S"),
         project=notification['project'],
         group=notification['group'],
-        text=getNotificationText(notification)
+        text=get_notification_text(notification)
     )
 
 #   -------------------------------------------------------------
@@ -89,8 +89,8 @@ def formatNotification(notificationMessage):
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def onBrokerMessage(channel, basic_deliver, properties, body):
-    notification = formatNotification(body.decode("utf-8"))
+def on_broker_message(channel, basic_deliver, properties, body):
+    notification = format_notification(body.decode("utf-8"))
 
     print(notification)
     sys.stdout.flush()
@@ -103,9 +103,9 @@ def onBrokerMessage(channel, basic_deliver, properties, body):
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def getConnection(config):
+def get_connection(config):
     try:
-        return getBrokerConnection(config)
+        return get_broker_connection(config)
     except pika.exceptions.ProbableAccessDeniedError:
         print(
             "Can't login to the broker: it's probably an access denied case.",
@@ -114,15 +114,15 @@ def getConnection(config):
         sys.exit(2)
 
 
-def getChannel(config):
-    return getConnection(config).channel()
+def get_channel(config):
+    return get_connection(config).channel()
 
 
-def getQueue(channel, exchange):
+def get_queue(channel, exchange):
     try:
-        return getBrokerQueue(channel, exchange)
-    except pika.exceptions.ChannelClosed as e:
-        print("Channel error: {0}".format(e))
+        return get_broker_queue(channel, exchange)
+    except pika.exceptions.ChannelClosed as exception:
+        print("Channel error: {0}".format(exception))
         sys.exit(4)
 
 
@@ -131,14 +131,14 @@ def getQueue(channel, exchange):
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def initializeApplication():
+def initialize_application():
     container = {}
 
-    container['config'] = getConfig()
+    container['config'] = get_config()
     container['options'] = {}
-    container['channel'] = getChannel(container['config'])
-    container['exchange'] = getExchange(container['config'])
-    container['queue'] = getQueue(container['channel'], container['exchange'])
+    container['channel'] = get_channel(container['config'])
+    container['exchange'] = get_exchange(container['config'])
+    container['queue'] = get_queue(container['channel'], container['exchange'])
 
     return container
 
@@ -148,28 +148,28 @@ def initializeApplication():
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def parseArguments(options):
+def parse_arguments(options):
     # Todo: allows an option --routing-key <key>
     options['BindingKeys'] = ['#']
 
 
-def subscribeToNotifications(options, channel, exchange, queue):
+def subscribe_to_notifications(options, channel, exchange, queue):
     for binding_key in options['BindingKeys']:
-        subscribeToNotificationsForTopic(binding_key, channel, exchange, queue)
+        subscribe_to_topic(binding_key, channel, exchange, queue)
 
 
-def subscribeToNotificationsForTopic(binding_key, channel, exchange, queue):
+def subscribe_to_topic(binding_key, channel, exchange, queue):
     try:
         channel.queue_bind(exchange=exchange,
                            queue=queue,
                            routing_key=binding_key)
-    except pika.exceptions.ChannelClosed as e:
-        print("Channel error: {0}".format(e))
+    except pika.exceptions.ChannelClosed as exception:
+        print("Channel error: {0}".format(exception))
         sys.exit(8)
 
 
-def consumeNotifications(channel, queue):
-    channel.basic_consume(onBrokerMessage, queue=queue)
+def consume_notifications(channel, queue):
+    channel.basic_consume(on_broker_message, queue=queue)
     channel.start_consuming()
 
 
@@ -178,12 +178,12 @@ def consumeNotifications(channel, queue):
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-app = initializeApplication()
-parseArguments(app['options'])
-subscribeToNotifications(
+app = initialize_application()
+parse_arguments(app['options'])
+subscribe_to_notifications(
     app['options'],
     app['channel'],
     app['exchange'],
     app['queue']
 )
-consumeNotifications(app['channel'], app['queue'])
+consume_notifications(app['channel'], app['queue'])
