@@ -15,9 +15,10 @@
 
 import configparser
 import json
-import pika
 import sys
 import time
+
+import pika
 
 
 #   -------------------------------------------------------------
