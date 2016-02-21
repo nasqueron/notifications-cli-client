@@ -131,15 +131,15 @@ def getQueue(channel, exchange):
 
 
 def initializeApplication():
-    app = {}
+    container = {}
 
-    app['config'] = getConfig()
-    app['options'] = {}
-    app['channel'] = getChannel(app['config'])
-    app['exchange'] = getExchange(app['config'])
-    app['queue'] = getQueue(app['channel'], app['exchange'])
+    container['config'] = getConfig()
+    container['options'] = {}
+    container['channel'] = getChannel(container['config'])
+    container['exchange'] = getExchange(container['config'])
+    container['queue'] = getQueue(container['channel'], container['exchange'])
 
-    return app
+    return container
 
 
 #   -------------------------------------------------------------
