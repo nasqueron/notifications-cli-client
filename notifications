@@ -90,7 +90,10 @@ def formatNotification(notificationMessage):
 
 def onBrokerMessage(channel, basic_deliver, properties, body):
     notification = formatNotification(body.decode("utf-8"))
+
     print(notification)
+    sys.stdout.flush()
+
     channel.basic_ack(basic_deliver.delivery_tag)
 
 
