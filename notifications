@@ -174,16 +174,22 @@ def consume_notifications(channel, queue):
 
 
 #   -------------------------------------------------------------
-#   Procedural code
+#   Application entry point
 #   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-app = initialize_application()
-parse_arguments(app['options'])
-subscribe_to_notifications(
-    app['options'],
-    app['channel'],
-    app['exchange'],
-    app['queue']
-)
-consume_notifications(app['channel'], app['queue'])
+def run_application():
+    app = initialize_application()
+    parse_arguments(app['options'])
+
+    subscribe_to_notifications(
+        app['options'],
+        app['channel'],
+        app['exchange'],
+        app['queue']
+    )
+
+    consume_notifications(app['channel'], app['queue'])
+
+
+run_application()
