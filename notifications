@@ -87,7 +87,7 @@ def format_notification(notification_message):
     """Format the notification as a string from a JSON message."""
     notification = json.loads(notification_message)
     return get_notification_format().format(
-        time=time.strftime("%H:%M:%S"),
+        time=time.strftime("%b %d %H:%M:%S"),
         project=notification['project'],
         group=notification['group'],
         text=get_notification_text(notification)
