@@ -60,7 +60,8 @@ def get_exchange(config):
 
 def get_broker_queue(channel, exchange):
     """Ensure exchange exists and declare a temporary queue."""
-    channel.exchange_declare(exchange=exchange, type='topic', durable=True)
+    channel.exchange_declare(
+        exchange=exchange, exchange_type='topic', durable=True)
     result = channel.queue_declare(exclusive=True)
     return result.method.queue
 
