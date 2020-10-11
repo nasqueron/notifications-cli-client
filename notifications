@@ -214,4 +214,5 @@ def run_application():
     consume_notifications(app['channel'], app['queue'])
 
 
-run_application()
+if __name__ == "__main__":
+    run_application()
